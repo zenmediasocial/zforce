@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ArchiveEntry;
+use App\Models\BlogPost;
 use App\Models\PlayerProfile;
 use App\Models\Report;
 use Illuminate\Http\JsonResponse;
@@ -59,28 +60,25 @@ class VortexWebhookController extends Controller
         // Store as a blog post (extend this with a BlogPost model later)
         $profile = PlayerProfile::where('user_id', $validated['user_id'])->first();
 
+        $post = BlogPost::createFromN8n([
+            'title' => $validated['title'],
+            'content' => $validated['content'],
+            'narrative_beats' => $validated['narrative_beats'] ?? [],
+            'story_arc' => $validated['story_arc'] ?? 'chronicle',
+            'generated_by' => $validated['generated_by'] ?? null,
+        ], $profile?->user);
+
         Log::info('Blog post received from n8n', [
             'user_id' => $validated['user_id'],
             'title' => $validated['title'],
-            'profile' => $profile?->temporal_id,
-        ]);
-
-        // TODO: Create BlogPost model and store
-        // For now, store in activities
-        $profile?->user->activities()->create([
-            'team_id' => $profile->user->current_team_id,
-            'type' => 'blog_generated',
-            'meta' => [
-                'title' => $validated['title'],
-                'content' => $validated['content'],
-                'narrative_beats' => $validated['narrative_beats'] ?? [],
-                'story_arc' => $validated['story_arc'],
-                'generated_by' => $validated['generated_by'],
-            ],
+            'blog_post_id' => $post->id,
+            'slug' => $post->slug,
         ]);
 
         return response()->json([
             'status' => 'stored',
+            'blog_post_id' => $post->id,
+            'slug' => $post->slug,
             'temporal_id' => $profile?->temporal_id,
         ]);
     }
