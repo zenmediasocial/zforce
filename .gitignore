@@ -17,3 +17,10 @@ yarn-error.log
 /.fleet
 /.idea
 /.vscode
+
+# Deployment artifacts (not source code)
+/libs/postgresql/
+
+# AcePanel specific
+/opt/
+
